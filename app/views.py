@@ -1,3 +1,3 @@
 from app import app
-from Flask import *
+from flask import *
 ...
