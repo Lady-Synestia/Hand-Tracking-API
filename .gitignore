@@ -1,5 +1,7 @@
 /.venv
-/__pychache__
+/__pycache__
+/app/__pycache__
 
 create-venv.ps1
 create-venv.txt
+run.ps1
