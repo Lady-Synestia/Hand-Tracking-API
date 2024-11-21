@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import mediapipe
 
 cv2.namedWindow("preview")
 vc = cv2.VideoCapture(0)
@@ -51,7 +52,7 @@ while rval:
     np_frame = np.asarray(frame)
     reversed_np_frame = flip_image(np_frame,"y")
     image_is_reversed = not image_is_reversed
-    cv2.imshow("preview",reversed_np_frame)
+    cv2.imshow("preview",overlayTwoArrays(np_frame,reversed_np_frame))
     rval, frame = vc.read()
     key = cv2.waitKey(20)
     if key == 27: # exit on ESC
