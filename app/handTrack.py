@@ -42,26 +42,36 @@ def overlayTwoArrays(array1,array2): # This has no practical purpose at the mome
 
 image_is_reversed = False
 
-def isDown(finger_tip,finger_base,wrist):
-    """Returns True if the finger tip is between the finger base and the wrist,
-    otherwise it returns False"""
-    ...
+def isExtended(finger_tip,finger_mcp,wrist):
+    """
+    Returns False if the finger tip is between the finger metacarpal and the wrist,
+    otherwise it returns True
+    
+    finger_tip, finger_mcp, and wrist all have x, y, and z attributes
+    """
+    a = math.sqrt((wrist.x-finger_mcp.x)**2+(wrist.y-finger_mcp.y)**2)
+    b = math.sqrt((wrist.x-finger_tip.x)**2+(wrist.y-finger_tip.y)**2)
+    c = math.sqrt((finger_mcp.x-finger_tip.x)**2+(finger_mcp.y-finger_tip.y)**2)
+
+    angle_A = math.degrees(math.acos((a**2+c**2-b**2)/(2*a*c)))
+    return angle_A > 90
 
 def detect_gestures(landmarks):
     """
     Detect what hand gestures are being shown
     """
     wrist = landmarks[0]
-    thumb_base = landmarks[2]
+    thumb_mcp = landmarks[2]
     thumb_tip = landmarks[4]
-    index_base = landmarks[5]
+    index_mcp = landmarks[5]
     index_tip = landmarks[8]
-    middle_base = landmarks[9]
+    middle_mcp = landmarks[9]
     middle_tip = landmarks[12]
-    ring_base = landmarks[13]
+    ring_mcp = landmarks[13]
     ring_tip = landmarks[16]
-    pinky_base = landmarks[17]
+    pinky_mcp = landmarks[17]
     pinky_tip = landmarks[20]
+    return isExtended(index_tip,index_mcp,wrist)
 
 with hands:
     while rval:
@@ -87,9 +97,10 @@ with hands:
                     mp_drawing_styles.get_default_hand_connections_style()
                 )
                 landmarks = hand_landmarks.landmark
+                gesture = detect_gestures(landmarks)
                 
         
-        image_flipped = cv2.putText(image_flipped, 'OpenCV', (50,50), font, 1, (255,128,0), 2, cv2.LINE_AA)
+        image_flipped = cv2.putText(image_flipped, str(gesture), (50,50), font, 1, (255,128,0), 2, cv2.LINE_AA)
         
         cv2.imshow("preview",image_flipped)
         rval, frame = vc.read()
