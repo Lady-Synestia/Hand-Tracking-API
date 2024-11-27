@@ -2,6 +2,7 @@
 import cv2
 import numpy as np
 import mediapipe as mp
+import math
 
 # Initialise mediapipe's hand tracking solution
 mp_drawing = mp.solutions.drawing_utils # so we can draw the hand landmarks onto the frame
@@ -41,11 +42,26 @@ def overlayTwoArrays(array1,array2): # This has no practical purpose at the mome
 
 image_is_reversed = False
 
+def isDown(finger_tip,finger_base,wrist):
+    """Returns True if the finger tip is between the finger base and the wrist,
+    otherwise it returns False"""
+    ...
+
 def detect_gestures(landmarks):
     """
     Detect what hand gestures are being shown
     """
-    ...
+    wrist = landmarks[0]
+    thumb_base = landmarks[2]
+    thumb_tip = landmarks[4]
+    index_base = landmarks[5]
+    index_tip = landmarks[8]
+    middle_base = landmarks[9]
+    middle_tip = landmarks[12]
+    ring_base = landmarks[13]
+    ring_tip = landmarks[16]
+    pinky_base = landmarks[17]
+    pinky_tip = landmarks[20]
 
 with hands:
     while rval:
@@ -70,6 +86,8 @@ with hands:
                     mp_drawing_styles.get_default_hand_landmarks_style(),
                     mp_drawing_styles.get_default_hand_connections_style()
                 )
+                landmarks = hand_landmarks.landmark
+                
         
         image_flipped = cv2.putText(image_flipped, 'OpenCV', (50,50), font, 1, (255,128,0), 2, cv2.LINE_AA)
         
@@ -78,6 +96,6 @@ with hands:
         key = cv2.waitKey(20)
         if key == 27: # exit on ESC
             break
-print(results.multi_hand_landmarks)
+
 cv2.destroyWindow("preview")
 vc.release()
