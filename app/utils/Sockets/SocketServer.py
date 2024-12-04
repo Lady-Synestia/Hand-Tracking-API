@@ -20,6 +20,7 @@ async def echo(websocket):
 
 
 async def main():
+    print("e")
     async with websockets.serve(echo, "localhost", 8765):
         await asyncio.Future()  # Run server indefinitely
 

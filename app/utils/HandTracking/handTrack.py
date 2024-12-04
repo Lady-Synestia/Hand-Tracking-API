@@ -1,9 +1,14 @@
 # This module will need to be restructured to work with the flask api
+import asyncio
+import json
+
 import cv2
 import numpy as np
 import mediapipe as mp
 import math
 import winsound
+
+from app.utils.Sockets.SocketSend import send_message
 
 
 class HandTrackingMain:
@@ -29,6 +34,28 @@ class HandTrackingMain:
         self.gesture = False
         self.rising_edge = False
 
+    # Assuming `results.multi_hand_landmarks` is the list you're passing
+    def convert_to_serializable(self, landmark_list):
+        all_landmarks = []  # List to store all landmarks for all hands
+
+        for hand_landmarks in landmark_list:
+            # Process landmarks for each hand
+            hand_data = []  # List to store landmarks for this specific hand
+
+            for landmark in hand_landmarks.landmark:
+                # Append each landmark's x, y, z values as a dictionary
+                hand_data.append({
+                    'x': landmark.x,
+                    'y': landmark.y,
+                    'z': landmark.z
+                })
+
+            # Append the landmarks for this hand to the overall list
+            all_landmarks.append(hand_data)
+
+        # Return the serialized JSON string of all landmarks
+        return json.dumps(all_landmarks)
+
     def mainloop(self):
         with self.hands:
             while self.rval:
@@ -45,6 +72,9 @@ class HandTrackingMain:
                 image_flipped.flags.writeable = True
                 image_flipped = cv2.cvtColor(image_flipped, cv2.COLOR_RGB2BGR)
                 if results.multi_hand_landmarks:
+                    # send the landmarks to the socket
+                    dict = self.convert_to_serializable(results.multi_hand_landmarks)
+                    asyncio.run(send_message(dict))
                     for hand_landmarks in results.multi_hand_landmarks:
                         self.mp_drawing.draw_landmarks(
                             image_flipped,
@@ -131,6 +161,10 @@ class HandTrackingMain:
             return False
 
 
-if __name__ == '__main__':
+def main():
     handTrackManager = HandTrackingMain()
     handTrackManager.mainloop()
+
+
+if __name__ == '__main__':
+    main()
