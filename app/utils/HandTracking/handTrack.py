@@ -118,20 +118,23 @@ class HandTrackingMain:
     def overlayTwoArrays(self, array1, array2):  # This has no practical purpose at the moment
         return np.bitwise_and(array1, array2)
 
-    def isExtended(self, finger_tip, finger_mcp, wrist):
+    def getAngle3Points(self, point_a,point_b,point_c):
+        a = math.sqrt((point_c.x-point_b.x)**2+(point_c.y-point_b.y)**2)
+        b = math.sqrt((point_c.x-point_a.x)**2+(point_c.y-point_a.y)**2)
+        c = math.sqrt((point_b.x-point_a.x)**2+(point_b.y-point_a.y)**2)
+
+        return math.degrees(math.acos((a**2+c**2-b**2)/(2*a*c)))
+
+    def isExtended(self,finger_tip,finger_mcp,wrist):
         """
         Returns False if the finger tip is between the finger metacarpal and the wrist,
         otherwise it returns True
         
         finger_tip, finger_mcp, and wrist all have x, y, and z attributes
         """
-        a = math.sqrt((wrist.x - finger_mcp.x) ** 2 + (wrist.y - finger_mcp.y) ** 2)
-        b = math.sqrt((wrist.x - finger_tip.x) ** 2 + (wrist.y - finger_tip.y) ** 2)
-        c = math.sqrt((finger_mcp.x - finger_tip.x) ** 2 + (finger_mcp.y - finger_tip.y) ** 2)
-
-        angle_A = math.degrees(math.acos((a ** 2 + c ** 2 - b ** 2) / (2 * a * c)))
+        angle_A = self.getAngle3Points(finger_tip,finger_mcp,wrist)
         return angle_A > 90
-
+    
     def detect_gestures(self, landmarks):
         """
         Detect what hand gestures are being shown
