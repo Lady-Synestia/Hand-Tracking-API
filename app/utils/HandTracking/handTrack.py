@@ -6,7 +6,6 @@ import cv2
 import numpy as np
 import mediapipe as mp
 import math
-import winsound
 
 from app.utils.Sockets.SocketSend import send_message
 
@@ -91,9 +90,6 @@ class HandTrackingMain:
                                                     cv2.LINE_AA)
                         if not self.rising_edge:
                             self.rising_edge = True
-                            winsound.PlaySound(
-                                'D:\\Qwazor\'s Folder\\Documents\\Github\\Hand-Tracking-API\\app\\vine_boom.wav',
-                                winsound.SND_ASYNC)
                     else:
                         self.rising_edge = False
 
