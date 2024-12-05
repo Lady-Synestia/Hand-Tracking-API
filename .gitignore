@@ -1,6 +1,6 @@
 /.venv
 /.idea
-*/__pycache__
+**/__pycache__/
 /Flask Tests/Requests/app/__pycache__
 
 create-venv.ps1
