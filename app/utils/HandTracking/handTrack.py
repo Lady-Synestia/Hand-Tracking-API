@@ -9,6 +9,11 @@ import math
 
 from app.utils.Sockets.SocketSend import send_message
 
+class Gesture:
+    def __init__(self, name, orientation, fingers):
+        self.name = name # String containing the name of the gesture, e.g. "thumb up"
+        self.orientation = orientation # String containing the orientation of the hand to produce this gesture, e.g. "up", "down", "left", "right", "any"
+        self.fingers = fingers # Which fingers+thumbs are being held up to produce this gesture
 
 class HandTrackingMain:
     def __init__(self):
@@ -58,8 +63,7 @@ class HandTrackingMain:
     def mainloop(self):
         with self.hands:
             while self.rval:
-                np_frame = np.asarray(self.frame)
-                image_flipped = self.flip_image(np_frame)  # Mirror the image. This makes it easier to control
+                image_flipped = cv2.flip(self.frame, 1)  # Mirror the image. This makes it easier to control
                 #                                          where you are putting your hand as people are more 
                 #                                          used to looking in mirrors than at cameras.
                 #                                          We want to input this image into mediapipe.
@@ -102,16 +106,6 @@ class HandTrackingMain:
         cv2.destroyWindow("preview")
         self.vc.release()
 
-    def flip_image(self, array, axis="y"):
-        array_x = array.shape[0]
-        array_y = array.shape[1]
-        if axis == "x":
-            return array[::-1]  # Reverses the whole array
-        else:
-            array = array[::-1]
-            rotated_array = array[::-1, ::-1]  # Reverses rows and columns of the array
-            return rotated_array
-
     def invert_colours(self, array):  # This has no practical purpose at the moment
         return np.invert(array)
 
@@ -127,7 +121,7 @@ class HandTrackingMain:
 
     def isExtended(self,finger_tip,finger_mcp,wrist):
         """
-        Returns False if the finger tip is between the finger metacarpal and the wrist,
+        Returns False if the finger_tip is between the finger metacarpal and the wrist,
         otherwise it returns True
         
         finger_tip, finger_mcp, and wrist all have x, y, and z attributes
