@@ -106,12 +106,6 @@ class HandTrackingMain:
         cv2.destroyWindow("preview")
         self.vc.release()
 
-    def invert_colours(self, array):  # This has no practical purpose at the moment
-        return np.invert(array)
-
-    def overlayTwoArrays(self, array1, array2):  # This has no practical purpose at the moment
-        return np.bitwise_and(array1, array2)
-
     def getAngle3Points(self, point_a,point_b,point_c):
         a = math.sqrt((point_c.x-point_b.x)**2+(point_c.y-point_b.y)**2)
         b = math.sqrt((point_c.x-point_a.x)**2+(point_c.y-point_a.y)**2)
