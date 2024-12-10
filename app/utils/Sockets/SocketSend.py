@@ -7,12 +7,14 @@ import json
 async def send_message(json_data):
     uri = "ws://localhost:8765"
     async with websockets.connect(uri) as websocket:
+
+        # ! json_data has already been converted to json!!!!!!
         # Convert the input dictionary to a JSON string
-        json_message = json.dumps(json_data)
+        # json_message = json.dumps(json_data)
 
         # Send the JSON message
-        await websocket.send(json_message)
-        print(f"Sent message: {json_message}")
+        await websocket.send(json_data)
+        print(f"Sent message: {json_data}")
 
 
 # Test message
