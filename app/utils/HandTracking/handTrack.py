@@ -146,21 +146,23 @@ class HandTrackingMain:
 
         for hand_landmarks in landmark_list:
             # Process landmarks for each hand
-            hand_data = []  # List to store landmarks for this specific hand
 
-            for landmark in hand_landmarks.landmark:
-                # Append each landmark's x, y, z values as a dictionary
-                hand_data.append({
+            # * using a dictionary so points can have keys
+            hand_data = {}
+
+            for index, landmark in enumerate(hand_landmarks.landmark):
+                # Add each landmark's x, y, z values as a dictionary
+                hand_data["point" + str(index)] = {
                     'x': landmark.x,
                     'y': landmark.y,
                     'z': landmark.z
-                })
+                }
 
             # Append the landmarks for this hand to the overall list
             all_landmarks.append(hand_data)
 
         # Return the serialized JSON string of all landmarks
-        return json.dumps(all_landmarks)
+        return json.dumps(all_landmarks[0])  # ! only sending first hand for testing purposes
 
     def mainloop(self):
         with self.hands:
