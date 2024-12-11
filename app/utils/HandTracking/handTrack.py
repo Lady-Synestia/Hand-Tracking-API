@@ -52,6 +52,14 @@ class Finger:
             return angle_a > 90
 
 class Gesture:
+    """
+            Class Gesture
+
+            :param name: str, name of the gesture. set to "unknown" if this unset
+            :param orientation: str, can be "up", "down", "left" or "right"
+            :param fingers: list, must only contain objects of type Finger
+            :param wrist: mediapipe hand landmark (landmarks[0])
+            """
     def __init__(self, name, orientation, fingers, wrist = None):
         """
         Class Gesture
