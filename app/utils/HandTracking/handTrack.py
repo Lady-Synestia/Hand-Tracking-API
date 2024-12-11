@@ -70,7 +70,6 @@ class Gesture:
                 finger.extended = finger.is_extended(self.wrist)
     def compare(self, other):
         if other.orientation == self.orientation or other.orientation == "any":
-            check = False
             for i in range(len(self.fingers)):
                 if self.fingers[i].extended != other.fingers[i].extended:
                     return False
