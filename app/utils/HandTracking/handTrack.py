@@ -10,6 +10,12 @@ import math
 from app.utils.Sockets.SocketSend import send_message
 
 def get_angle_3_points(point_a, point_b, point_c):
+    """
+    :param point_a: mediapipe hand landmark
+    :param point_b: mediapipe hand landmark
+    :param point_c: mediapipe hand landmark
+    :return: angle at point_b, in degrees (yeah I could've just used radians but I value my sanity more than efficiency)
+    """
     a = math.sqrt((point_c.x - point_b.x) ** 2 + (point_c.y - point_b.y) ** 2)
     b = math.sqrt((point_c.x - point_a.x) ** 2 + (point_c.y - point_a.y) ** 2)
     c = math.sqrt((point_b.x - point_a.x) ** 2 + (point_b.y - point_a.y) ** 2)
@@ -53,13 +59,24 @@ class Finger:
 
 class Gesture:
     """
-            Class Gesture
+    Class Gesture:
 
-            :param name: str, name of the gesture. set to "unknown" if this unset
-            :param orientation: str, can be "up", "down", "left" or "right"
-            :param fingers: list, must only contain objects of type Finger
-            :param wrist: mediapipe hand landmark (landmarks[0])
-            """
+    Attributes
+    ----------
+    name : str
+    orientation : str
+    fingers : list[Finger,Finger,Finger,Finger,Finger]
+    wrist : single mediapipe hand landmark
+
+    Methods
+    -------
+    __init__(name, orientation, fingers, wrist = None):
+        Constructor
+    compare(other):
+        Compares two gestures to each other
+    get_orientation():
+        Gets the orientation of the gesture if self.orientation is set to "unknown"
+    """
     def __init__(self, name, orientation, fingers, wrist = None):
         """
         Class Gesture
@@ -77,6 +94,11 @@ class Gesture:
             for finger in self.fingers:
                 finger.extended = finger.is_extended(self.wrist)
     def compare(self, other):
+        """compare(other)
+
+        :param other: Gesture
+        :return: True if the gestures match, False if they don't
+        """
         if other.orientation == self.orientation or other.orientation == "any":
             for i in range(len(self.fingers)):
                 if self.fingers[i].extended != other.fingers[i].extended:
@@ -85,22 +107,28 @@ class Gesture:
         else:
             return False
     def get_orientation(self):
+        """
+
+        :return: orientation: str, can be "up", "down", "left", or "right"
+        """
         # We are only concerned about the position of the middle finger relative to the wrist
+        if self.orientation == "unknown":
+            a = self.fingers[2].a # Middle finger position
 
-        a = self.fingers[2].a # Middle finger position
+            if abs(a.x-self.wrist.x) < abs(a.y-self.wrist.y): # then we know the hand is pointing either up or down
+                if a.y < self.wrist.y: # middle finger is above the wrist
+                    orientation = "up"
+                else:
+                    orientation = "down"
+            else:#                                     then we know the hand is pointing either left or right
+                if a.x > self.wrist.x: # middle finger is to the right of the wrist
+                    orientation = "right"
+                else:
+                    orientation = "left"
 
-        if abs(a.x-self.wrist.x) < abs(a.y-self.wrist.y): # then we know the hand is pointing either up or down
-            if a.y < self.wrist.y: # middle finger is above the wrist
-                orientation = "up"
-            else:
-                orientation = "down"
-        else:#                                     then we know the hand is pointing either left or right
-            if a.x > self.wrist.x: # middle finger is to the right of the wrist
-                orientation = "right"
-            else:
-                orientation = "left"
-
-        return orientation
+            return orientation
+        else:
+            return self.orientation
 
 
 class HandTrackingMain:
@@ -143,11 +171,23 @@ class HandTrackingMain:
                              Finger(None, None, None, None, False, "index", False),
                              Finger(None, None, None, None, False, "middle", True),
                              Finger(None, None, None, None, False, "ring", False),
-                             Finger(None, None, None, None, False, "pinky", False)])
+                             Finger(None, None, None, None, False, "pinky", False)]),
+                         Gesture("fist", "any", [
+                             Finger(None, None, None, None, True, "thumb", False),
+                             Finger(None, None, None, None, False, "index", False),
+                             Finger(None, None, None, None, False, "middle", False),
+                             Finger(None, None, None, None, False, "ring", False),
+                             Finger(None, None, None, None, False, "pinky", False)]),
+                         Gesture("open hand", "any", [
+                             Finger(None, None, None, None, True, "thumb", True),
+                             Finger(None, None, None, None, False, "index", True),
+                             Finger(None, None, None, None, False, "middle", True),
+                             Finger(None, None, None, None, False, "ring", True),
+                             Finger(None, None, None, None, False, "pinky", True)])
                     ]
 
     # Assuming `results.multi_hand_landmarks` is the list you're passing
-    def convert_to_serializable(self, landmark_list):
+    def convert_to_serializable(self, landmark_list): # Update this to your heart's content I won't touch this unless you want me to - will
         all_landmarks = []  # List to store all landmarks for all hands
 
         for hand_landmarks in landmark_list:
@@ -209,33 +249,13 @@ class HandTrackingMain:
 
         cv2.destroyWindow("preview")
         self.vc.release()
-
-    def get_angle_3_points(self, point_a,point_b,point_c):
-        a = math.sqrt((point_c.x-point_b.x)**2+(point_c.y-point_b.y)**2)
-        b = math.sqrt((point_c.x-point_a.x)**2+(point_c.y-point_a.y)**2)
-        c = math.sqrt((point_b.x-point_a.x)**2+(point_b.y-point_a.y)**2)
-
-        return math.degrees(math.acos((a**2+c**2-b**2)/(2*a*c)))
-
-    def is_extended(self, tip, mcp, wrist, is_thumb = False, thumb_cmc = None, thumb_ip = None):
-        """
-        Returns True if the selected digit is extended
-        
-        finger_tip, finger_mcp, and wrist all have x, y, and z attributes
-        """
-        if is_thumb:
-            angle_1 = self.get_angle_3_points(wrist, thumb_cmc, mcp) # Angle at THUMB_CMC, landmarks[1]
-            angle_2 = self.get_angle_3_points(thumb_cmc, mcp, thumb_ip) # Angle at THUMB_MCP, landmarks[2]
-            angle_3 = self.get_angle_3_points(mcp, thumb_ip, tip) # Angle at THUMB_IP, landmarks[3]
-            threshold = 135 # If any of the angles are below this number, the thumb is bent and therefore not extended fully (can be adjusted if it's too sensitive or not enough)
-            return angle_1 >= threshold and angle_2 >= threshold and angle_3 >= threshold # Return True if all angles are above the threshold
-        else:
-            angle_a = self.get_angle_3_points(tip,mcp,wrist)
-            return angle_a > 90
     
     def detect_gestures(self, landmarks):
         """
         Detect what hand gestures are being shown
+
+        :param landmarks: results from hand_landmarks.landmark
+        :return: Gesture
         """
         wrist = landmarks[0]
         f_thumb = Finger(landmarks[1],landmarks[2],landmarks[3],landmarks[4], wrist, True)
