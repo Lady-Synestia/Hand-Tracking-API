@@ -166,7 +166,7 @@ class HandTrackingMain:
             Finger(None, None, None, None, False, "middle", False),
             Finger(None, None, None, None, False, "ring", False),
             Finger(None, None, None, None, False, "pinky", False)]),
-                         Gesture("thumbs up right", "right", [
+                         Gesture("thumbs up", "right", [
                              Finger(None, None, None, None, True, "thumb", True),
                              Finger(None, None, None, None, False, "index", False),
                              Finger(None, None, None, None, False, "middle", False),
@@ -189,7 +189,49 @@ class HandTrackingMain:
                              Finger(None, None, None, None, False, "index", True),
                              Finger(None, None, None, None, False, "middle", True),
                              Finger(None, None, None, None, False, "ring", True),
-                             Finger(None, None, None, None, False, "pinky", True)])
+                             Finger(None, None, None, None, False, "pinky", True)]),
+                         Gesture("metal", "up", [
+                             Finger(None, None, None, None, True, "thumb", False),
+                             Finger(None, None, None, None, False, "index", True),
+                             Finger(None, None, None, None, False, "middle", False),
+                             Finger(None, None, None, None, False, "ring", False),
+                             Finger(None, None, None, None, False, "pinky", True)]),
+                         Gesture("web shooter", "down", [
+                             Finger(None, None, None, None, True, "thumb", False),
+                             Finger(None, None, None, None, False, "index", True),
+                             Finger(None, None, None, None, False, "middle", False),
+                             Finger(None, None, None, None, False, "ring", False),
+                             Finger(None, None, None, None, False, "pinky", True)]),
+                         Gesture("erm ackshually", "up", [
+                             Finger(None, None, None, None, True, "thumb", False),
+                             Finger(None, None, None, None, False, "index", True),
+                             Finger(None, None, None, None, False, "middle", False),
+                             Finger(None, None, None, None, False, "ring", False),
+                             Finger(None, None, None, None, False, "pinky", False)]),
+                         Gesture("victory", "up", [
+                             Finger(None, None, None, None, True, "thumb", False),
+                             Finger(None, None, None, None, False, "index", True),
+                             Finger(None, None, None, None, False, "middle", True),
+                             Finger(None, None, None, None, False, "ring", False),
+                             Finger(None, None, None, None, False, "pinky", False)]),
+                         Gesture("number 3", "up", [
+                             Finger(None, None, None, None, True, "thumb", False),
+                             Finger(None, None, None, None, False, "index", True),
+                             Finger(None, None, None, None, False, "middle", True),
+                             Finger(None, None, None, None, False, "ring", True),
+                             Finger(None, None, None, None, False, "pinky", False)]),
+                         Gesture("ok", "up", [
+                             Finger(None, None, None, None, True, "thumb", True),
+                             Finger(None, None, None, None, False, "index", False),
+                             Finger(None, None, None, None, False, "middle", True),
+                             Finger(None, None, None, None, False, "ring", True),
+                             Finger(None, None, None, None, False, "pinky", True)]),
+                         Gesture("lmao gottem", "down", [
+                             Finger(None, None, None, None, True, "thumb", False),
+                             Finger(None, None, None, None, False, "index", False),
+                             Finger(None, None, None, None, False, "middle", True),
+                             Finger(None, None, None, None, False, "ring", True),
+                             Finger(None, None, None, None, False, "pinky", True)]),
                          ]
 
     # Assuming `results.multi_hand_landmarks` is the list you're passing
@@ -275,7 +317,7 @@ class HandTrackingMain:
         hand = Gesture("unknown", "unknown", [f_thumb, f_index, f_middle, f_ring, f_pinky],
                        wrist)  # The current gesture that we want to check against the list of gestures
         hand.orientation = hand.get_orientation()
-        print(hand.orientation)
+        #print(hand.orientation)
 
         for gesture in self.gestures:
             if hand.compare(gesture):
