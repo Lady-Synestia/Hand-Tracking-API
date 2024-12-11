@@ -51,16 +51,16 @@ class Finger:
             angle_a = get_angle_3_points(self.d, self.b, wrist)
             return angle_a > 90
 
-class Hand:
-    def __init__(self, thumb, index, middle, ring, pinky):
-        self.thumb = thumb
-        self.index = index
-        self.middle = middle
-        self.ring = ring
-        self.pinky = pinky
-
 class Gesture:
     def __init__(self, name, orientation, fingers, wrist = None):
+        """
+        Class Gesture
+
+        :param name: str, name of the gesture. set to "unknown" if this unset
+        :param orientation: str, can be "up", "down", "left" or "right"
+        :param fingers: list, must only contain objects of type Finger
+        :param wrist: mediapipe hand landmark (landmarks[0])
+        """
         self.name = name # String containing the name of the gesture, e.g. "thumb up"
         self.orientation = orientation # String containing the orientation of the hand to produce this gesture, e.g. "up", "down", "left", "right", "any"
         self.fingers = fingers # List of fingers used to produce this gesture
@@ -77,7 +77,6 @@ class Gesture:
         else:
             return False
     def get_orientation(self):
-        orientation = "up"
         # We are only concerned about the position of the middle finger relative to the wrist
 
         a = self.fingers[2].a # Middle finger position
