@@ -81,7 +81,7 @@ class Gesture:
         Gets the orientation of the gesture if self.orientation is set to "unknown"
     """
 
-    def __init__(self, name, orientation, fingers, wrist=None):
+    def __init__(self, name, orientation, fingers, wrist=None, handedness=None):
         """
         Class Gesture
 
@@ -94,6 +94,7 @@ class Gesture:
         self.orientation = orientation  # String containing the orientation of the hand to produce this gesture, e.g. "up", "down", "left", "right", "any"
         self.fingers = fingers  # List of fingers used to produce this gesture
         self.wrist = wrist
+        self.handedness = handedness
         if self.wrist is not None:
             for finger in self.fingers:
                 finger.extended = finger.is_extended(self.wrist)
@@ -158,6 +159,8 @@ class HandTrackingMain:
             self.rval = False
 
         self.gesture = False
+        self.left_gesture = False
+        self.right_gesture = False
         self.rising_edge = False
 
         self.gestures = [Gesture("thumbs up", "left", [
@@ -273,11 +276,11 @@ class HandTrackingMain:
 
                 image_flipped.flags.writeable = True
                 image_flipped = cv2.cvtColor(image_flipped, cv2.COLOR_RGB2BGR)
-                if results.multi_hand_landmarks:
+                if results.multi_hand_landmarks and results.multi_handedness:
                     # send the landmarks to the socket
                     dict = self.convert_to_serializable(results.multi_hand_landmarks)
                     asyncio.run(send_message(dict))
-                    for hand_landmarks in results.multi_hand_landmarks:
+                    for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
                         self.mp_drawing.draw_landmarks(
                             image_flipped,
                             hand_landmarks,
@@ -287,9 +290,17 @@ class HandTrackingMain:
                         )
                         landmarks = hand_landmarks.landmark
                         self.gesture = self.detect_gestures(landmarks)
-
-                    image_flipped = cv2.putText(image_flipped, self.gesture.name, (50, 50), self.font, 1, (255, 0, 255),
-                                                2, cv2.LINE_AA)
+                        match handedness.classification[0].label:
+                            case "Left":
+                                self.left_gesture = self.gesture
+                                image_flipped = cv2.putText(image_flipped, self.left_gesture.name, (50, 50), self.font,
+                                                            1, (255, 0, 255),
+                                                            2, cv2.LINE_AA)
+                            case "Right":
+                                self.right_gesture = self.gesture
+                                image_flipped = cv2.putText(image_flipped, self.right_gesture.name, (400, 50), self.font, 1,
+                                                            (255, 0, 255),
+                                                            2, cv2.LINE_AA)
 
                 cv2.imshow("preview", image_flipped)
                 self.rval, self.frame = self.vc.read()
