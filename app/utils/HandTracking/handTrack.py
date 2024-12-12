@@ -293,11 +293,13 @@ class HandTrackingMain:
                         match handedness.classification[0].label:
                             case "Left":
                                 self.left_gesture = self.gesture
+                                self.left_gesture.handedness = "Left"
                                 image_flipped = cv2.putText(image_flipped, self.left_gesture.name, (50, 50), self.font,
                                                             1, (255, 0, 255),
                                                             2, cv2.LINE_AA)
                             case "Right":
                                 self.right_gesture = self.gesture
+                                self.right_gesture.handedness = "Right"
                                 image_flipped = cv2.putText(image_flipped, self.right_gesture.name, (400, 50), self.font, 1,
                                                             (255, 0, 255),
                                                             2, cv2.LINE_AA)
