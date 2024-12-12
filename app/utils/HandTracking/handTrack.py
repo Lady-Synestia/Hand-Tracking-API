@@ -257,7 +257,7 @@ class HandTrackingMain:
             all_landmarks.append(hand_data)
 
         # Return the serialized JSON string of all landmarks
-        return json.dumps(all_landmarks[0])  # ! only sending first hand for testing purposes
+        return json.dumps(all_landmarks)
 
     def mainloop(self):
         with self.hands:
