@@ -254,7 +254,7 @@ class HandTrackingMain:
                 }
 
             # Append the landmarks for this hand to the overall list
-            all_landmarks.append(hand_data)
+            all_landmarks.append([hand_data])
 
         # Return the serialized JSON string of all landmarks
         return json.dumps(all_landmarks)
