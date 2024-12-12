@@ -1,27 +1,43 @@
 import asyncio
 import websockets
-import json
 
 
-# this is an example of how to send data to the socket
-async def send_message(json_data):
-    uri = "ws://localhost:8765"
-    async with websockets.connect(uri) as websocket:
+class WebSocketClient:
+    def __init__(self, uri):
+        self.uri = uri
+        self.websocket = None
 
-        # ! json_data has already been converted to json!!!!!!
-        # Convert the input dictionary to a JSON string
-        # json_message = json.dumps(json_data)
+    async def connect(self):
+        if self.websocket is None or self.websocket.closed:
+            self.websocket = await websockets.connect(self.uri)
+            print("WebSocket connected.")
 
-        # Send the JSON message
-        await websocket.send(json_data)
+    async def send_message(self, json_data):
+        await self.connect()  # make sure connection is open
+        await self.websocket.send(json_data)
         print(f"Sent message: {json_data}")
 
+    async def close(self):
+        if self.websocket and not self.websocket.closed:
+            await self.websocket.close()
+            print("WebSocket closed.")
 
-# Test message
-if __name__ == "__main__":
-    data = {
-        "type": "greeting",
-        "content": "Hello, server!",
-        "timestamp": "2024-11-27T12:00:00Z"
-    }
-    asyncio.run(send_message(data))
+
+# make the like singleton
+websocket_client = WebSocketClient("ws://localhost:8765")
+
+
+async def initialize():
+    # initialises the client
+    await websocket_client.connect()
+
+
+async def send_message(json_data):
+    # sends messages
+    await websocket_client.send_message(json_data)
+    print("sent")
+
+
+async def close_connection():
+    # closes conn
+    await websocket_client.close()
