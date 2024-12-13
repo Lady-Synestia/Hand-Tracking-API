@@ -50,8 +50,6 @@ class WebSocketClient:
             await asyncio.sleep(2)  # Retry after delay
             await self.connect(uri)  # Retry connection
 
-    import websockets.protocol  # Import the State class
-
     async def send_socket_message(self, json_data):
         if self.websocket_client is not None:
             try:

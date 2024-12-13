@@ -1,7 +1,7 @@
 import asyncio
 from utils.HandTracking import main as start_hand_tracking
 from utils.Sockets import main as start_socket_server
-from utils.Sockets import WebSocketClient  # Import the WebSocketClient
+from utils.Sockets import WebSocketClient
 
 
 async def run_components():

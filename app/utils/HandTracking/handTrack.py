@@ -1,5 +1,3 @@
-# This module will need to be restructured to work with the flask api
-import asyncio
 import json
 
 import cv2
