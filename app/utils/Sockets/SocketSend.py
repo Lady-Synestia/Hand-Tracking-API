@@ -56,7 +56,7 @@ class WebSocketClient:
                 # Check if the websocket is open using the `state` property
                 if self.websocket_client.state != websockets.protocol.State.OPEN:
                     print("WebSocket is closed or closing, reconnecting...")
-                    await self.connect()  # Reconnect if closed or closing
+                    await self.connect(self.uri)  # Reconnect if closed or closing
 
                 await self.websocket_client.send(json_data)
                 print(f"Sent message: {json_data}")
