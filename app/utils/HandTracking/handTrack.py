@@ -1,13 +1,9 @@
-# This module will need to be restructured to work with the flask api
-import asyncio
 import json
 
 import cv2
 import numpy as np
 import mediapipe as mp
 import math
-
-from app.utils.Sockets.SocketSend import send_message
 
 
 def get_angle_3_points(point_a, point_b, point_c):
@@ -159,10 +155,11 @@ class HandTrackingMain:
             self.rval = False
 
         self.gesture = Gesture("unknown", "unknown", [Finger(None, None, None, None, True, "thumb", False),
-            Finger(None, None, None, None, False, "index", False),
-            Finger(None, None, None, None, False, "middle", False),
-            Finger(None, None, None, None, False, "ring", False),
-            Finger(None, None, None, None, False, "pinky", False)], None, None)
+                                                      Finger(None, None, None, None, False, "index", False),
+                                                      Finger(None, None, None, None, False, "middle", False),
+                                                      Finger(None, None, None, None, False, "ring", False),
+                                                      Finger(None, None, None, None, False, "pinky", False)], None,
+                               None)
         self.left_gesture = self.gesture
         self.left_gesture.handedness = "Left"
         self.right_gesture = self.gesture
@@ -268,7 +265,7 @@ class HandTrackingMain:
         # Return the serialized JSON string of all landmarks
         return json.dumps(all_landmarks)
 
-    def mainloop(self):
+    async def mainloop(self, websocket_client):
         with self.hands:
             while self.rval:
                 image_flipped = cv2.flip(self.frame, 1)  # Mirror the image. This makes it easier to control
@@ -285,7 +282,7 @@ class HandTrackingMain:
                 if results.multi_hand_landmarks and results.multi_handedness:
                     # send the landmarks to the socket
                     dict = self.convert_to_serializable(results.multi_hand_landmarks)
-                    asyncio.run(send_message(dict))
+                    await websocket_client.send_socket_message(dict)
                     for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
                         self.mp_drawing.draw_landmarks(
                             image_flipped,
@@ -304,7 +301,8 @@ class HandTrackingMain:
                                                             2, cv2.LINE_AA)
                             case "Right":
                                 self.right_gesture = self.gesture
-                                image_flipped = cv2.putText(image_flipped, self.right_gesture.name, (400, 50), self.font, 1,
+                                image_flipped = cv2.putText(image_flipped, self.right_gesture.name, (400, 50),
+                                                            self.font, 1,
                                                             (255, 0, 255),
                                                             2, cv2.LINE_AA)
 
@@ -334,7 +332,7 @@ class HandTrackingMain:
         hand = Gesture("unknown", "unknown", [f_thumb, f_index, f_middle, f_ring, f_pinky],
                        wrist)  # The current gesture that we want to check against the list of gestures
         hand.orientation = hand.get_orientation()
-        #print(hand.orientation)
+        # print(hand.orientation)
 
         for gesture in self.gestures:
             if hand.compare(gesture):
@@ -343,10 +341,6 @@ class HandTrackingMain:
         return hand
 
 
-def main():
+async def main(websocket_client):
     handTrackManager = HandTrackingMain()
-    handTrackManager.mainloop()
-
-
-if __name__ == '__main__':
-    main()
+    await handTrackManager.mainloop(websocket_client)

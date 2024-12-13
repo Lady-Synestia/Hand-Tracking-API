@@ -1,17 +1,24 @@
 import asyncio
 from utils.HandTracking import main as start_hand_tracking
 from utils.Sockets import main as start_socket_server
+from utils.Sockets import WebSocketClient
 
 
 async def run_components():
-    # define the socket server hand tracking
-    websocket_server_task = asyncio.create_task(start_socket_server())
-    hand_tracking_task = asyncio.to_thread(start_hand_tracking)
+    # start the socket server
+    websocket_client_task = asyncio.create_task(start_socket_server())
 
-    # wait for them to complete
-    await asyncio.gather(websocket_server_task, hand_tracking_task)
+    # Initialize the WebSocketClient
+    websocket_client = WebSocketClient()
+    await websocket_client.initialize()  # Ensure the WebSocket client is connected
+
+    # Start hand tracking in a separate thread and pass the WebSocket client to it
+    hand_tracking_task = asyncio.create_task(start_hand_tracking(websocket_client))
+
+    # Let both tasks run in the background
+    await asyncio.gather(websocket_client_task, hand_tracking_task)
 
 
 if __name__ == "__main__":
-    # run the components
+    # Run the components
     asyncio.run(run_components())
