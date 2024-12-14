@@ -1,4 +1,6 @@
+import asyncio
 import json
+import time
 
 import cv2
 import numpy as np
@@ -145,7 +147,7 @@ class HandTrackingMain:
         # Create a window for the camera feed called "preview"
         cv2.namedWindow("preview")
         # Start capturing from the default camera
-        self.vc = cv2.VideoCapture(0)
+        self.vc = cv2.VideoCapture(3)
 
         self.font = cv2.FONT_HERSHEY_SIMPLEX
         if self.vc.isOpened():  # try to get the first frame
@@ -265,56 +267,6 @@ class HandTrackingMain:
         # Return the serialized JSON string of all landmarks
         return json.dumps(all_landmarks)
 
-    async def mainloop(self, websocket_client):
-        with self.hands:
-            while self.rval:
-                image_flipped = cv2.flip(self.frame, 1)  # Mirror the image. This makes it easier to control
-                #                                          where you are putting your hand as people are more 
-                #                                          used to looking in mirrors than at cameras.
-                #                                          We want to input this image into mediapipe.
-
-                image_flipped.flags.writeable = False
-                image_flipped = cv2.cvtColor(image_flipped, cv2.COLOR_BGR2RGB)
-                results = self.hands.process(image_flipped)  # Get hand tracking data for that frame
-
-                image_flipped.flags.writeable = True
-                image_flipped = cv2.cvtColor(image_flipped, cv2.COLOR_RGB2BGR)
-                if results.multi_hand_landmarks and results.multi_handedness:
-                    # send the landmarks to the socket
-                    dict = self.convert_to_serializable(results.multi_hand_landmarks)
-                    await websocket_client.send_socket_message(dict)
-                    for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
-                        self.mp_drawing.draw_landmarks(
-                            image_flipped,
-                            hand_landmarks,
-                            self.mp_hands.HAND_CONNECTIONS,
-                            self.mp_drawing_styles.get_default_hand_landmarks_style(),
-                            self.mp_drawing_styles.get_default_hand_connections_style()
-                        )
-                        landmarks = hand_landmarks.landmark
-                        self.gesture = self.detect_gestures(landmarks)
-                        match handedness.classification[0].label:
-                            case "Left":
-                                self.left_gesture = self.gesture
-                                image_flipped = cv2.putText(image_flipped, self.left_gesture.name, (50, 50), self.font,
-                                                            1, (255, 0, 255),
-                                                            2, cv2.LINE_AA)
-                            case "Right":
-                                self.right_gesture = self.gesture
-                                image_flipped = cv2.putText(image_flipped, self.right_gesture.name, (400, 50),
-                                                            self.font, 1,
-                                                            (255, 0, 255),
-                                                            2, cv2.LINE_AA)
-
-                cv2.imshow("preview", image_flipped)
-                self.rval, self.frame = self.vc.read()
-                key = cv2.waitKey(20)
-                if key == 27:  # exit on ESC
-                    break
-
-        cv2.destroyWindow("preview")
-        self.vc.release()
-
     def detect_gestures(self, landmarks):
         """
         Detect what hand gestures are being shown
@@ -340,6 +292,58 @@ class HandTrackingMain:
 
         return hand
 
+    async def mainloop(self, websocket_client, tracking_interval=1):
+        last_processed_time = time.time()  # Track the last processed frame time
+
+        with self.hands:
+            while self.rval:
+                current_time = time.time()
+                if current_time - last_processed_time >= tracking_interval:
+                    last_processed_time = current_time  # Update the time of the last processed frame
+
+                    image_flipped = cv2.flip(self.frame, 1)
+                    image_flipped.flags.writeable = False
+                    image_flipped = cv2.cvtColor(image_flipped, cv2.COLOR_BGR2RGB)
+                    results = self.hands.process(image_flipped)
+
+                    image_flipped.flags.writeable = True
+                    image_flipped = cv2.cvtColor(image_flipped, cv2.COLOR_RGB2BGR)
+                    if results.multi_hand_landmarks and results.multi_handedness:
+                        json_dict = self.convert_to_serializable(results.multi_hand_landmarks)
+                        await websocket_client.send_socket_message(json_dict)
+                        for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
+                            self.mp_drawing.draw_landmarks(
+                                image_flipped,
+                                hand_landmarks,
+                                self.mp_hands.HAND_CONNECTIONS,
+                                self.mp_drawing_styles.get_default_hand_landmarks_style(),
+                                self.mp_drawing_styles.get_default_hand_connections_style()
+                            )
+                            landmarks = hand_landmarks.landmark
+                            self.gesture = self.detect_gestures(landmarks)
+                            match handedness.classification[0].label:
+                                case "Left":
+                                    self.left_gesture = self.gesture
+                                    image_flipped = cv2.putText(image_flipped, self.left_gesture.name, (50, 50),
+                                                                self.font,
+                                                                1, (255, 0, 255),
+                                                                2, cv2.LINE_AA)
+                                case "Right":
+                                    self.right_gesture = self.gesture
+                                    image_flipped = cv2.putText(image_flipped, self.right_gesture.name, (400, 50),
+                                                                self.font, 1,
+                                                                (255, 0, 255),
+                                                                2, cv2.LINE_AA)
+
+                    cv2.imshow("preview", image_flipped)
+
+                self.rval, self.frame = self.vc.read()
+                key = cv2.waitKey(20)
+                if key == 27:  # exit on ESC
+                    break
+
+        cv2.destroyWindow("preview")
+        self.vc.release()
 
 async def main(websocket_client):
     handTrackManager = HandTrackingMain()
