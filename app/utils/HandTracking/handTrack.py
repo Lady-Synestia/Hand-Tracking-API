@@ -350,6 +350,6 @@ async def main(websocket_client):
     # this like initialises the camera and stuff. U can change the camera index it uses in here
     handTrackManager = HandTrackingMain()
 
-    # this does the actual tracking and the tracking interval is the delay between tracking frames. I think 0 might break everything it might not
+    # this does the actual tracking and the tracking interval is the delay between tracking frames. I think 0.01 is min
     tracking_interval = 0.1
     await handTrackManager.mainloop(websocket_client, tracking_interval)
