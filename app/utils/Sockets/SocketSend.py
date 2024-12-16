@@ -1,9 +1,11 @@
 import asyncio
+import threading
 import collections
 import time
+from queue import Queue
 
 import websockets
-import websockets.protocol  # Import the State class
+import websockets.protocol
 
 
 class WebSocketClient:
@@ -17,35 +19,28 @@ class WebSocketClient:
     def __init__(self):
         if not hasattr(self, 'websocket_client'):
             self.websocket_client = None
-        self.uri = "ws://localhost:8765"  # Default WebSocket URI
+        self.uri = "ws://localhost:8765"
 
-        # a deque to store timestamps of messages sent in the last `window_size` seconds
         self.message_queue = collections.deque()
-        self.max_messages_per_window = 70  # Maximum messages per second
-        self.window_size = 1  # Time window in seconds (1 second window for rate-limiting)
-        self.message_interval = 1 / self.max_messages_per_window  # Interval between messages in seconds
-
+        self.max_messages_per_window = 70
+        self.window_size = 1
+        self.message_interval = 1 / self.max_messages_per_window
 
     async def initialize(self):
-        # Connect automatically on initialization
         if self.websocket_client is None or self.websocket_client.closed:
-            print("Initializing WebSocketClient...")
+            print("initializing websocketclient...")
             await self.connect(self.uri)
-
-    async def get_client(self):
-        await asyncio.sleep(0)
-        return self.websocket_client
 
     async def reset_connection(self):
         if self.websocket_client:
-            print("Closing existing connection.")
+            print("closing existing connection")
             await self.websocket_client.close()
             self.websocket_client = None
-            print("Connection closed.")
+            print("connection closed")
 
     async def connect(self, uri):
-        print("Starting connection process.")
-        await self.reset_connection()  # Ensure any previous connection is closed
+        print("starting connection process")
+        await self.reset_connection()
         try:
             self.websocket_client = await websockets.connect(
                 uri,
@@ -54,72 +49,93 @@ class WebSocketClient:
                 ping_timeout=None,
                 close_timeout=None
             )
-            print(f"Connected to {uri}")
+            print(f"connected to {uri}")
         except Exception as e:
-            print(f"Connection error: {e}. Retrying...")
-            await asyncio.sleep(2)  # Retry after delay
-            await self.connect(uri)  # Retry connection
+            print(f"connection error: {e} retrying...")
+            await asyncio.sleep(2)
+            await self.connect(uri)
 
     async def send_socket_message(self, json_data):
         if self.websocket_client is not None:
             try:
-                # Add the new message to the queue
-                current_time = time.time()
+                if self.websocket_client.state != websockets.protocol.State.OPEN:
+                    print("websocket closed reconnecting...")
+                    await self.connect(self.uri)
 
-                # Clean up old messages in the queue that fall outside the time window
-                while self.message_queue and self.message_queue[0][0] < current_time - self.window_size:
-                    self.message_queue.popleft()
-
-                # Add the new message to the queue
-                self.message_queue.append((current_time, json_data))
-
-                # If we have more than the maximum allowed messages in the window, discard the oldest
-                while len(self.message_queue) > self.max_messages_per_window:
-                    self.message_queue.popleft()  # Discard the oldest message
-
-                # Send messages evenly spaced throughout the second
-                while self.message_queue:
-                    message_time, message = self.message_queue.popleft()
-
-                    # Check if the websocket is open using the `state` property
-                    if self.websocket_client.state != websockets.protocol.State.OPEN:
-                        print("WebSocket is closed or closing, reconnecting...")
-                        await self.connect(self.uri)  # Reconnect if closed or closing
-
-                    # Send the message
-                    await self.websocket_client.send(message)
-
-                    pong_waiter = await self.websocket_client.ping()
-                    # only if you want to wait for the corresponding pong
-                    latency = await pong_waiter
-                    print(latency)
-
-                    # Wait until the next message interval (evenly spaced)
-                    time_to_wait = self.message_interval - (time.time() - current_time) % self.message_interval
-                    await asyncio.sleep(time_to_wait)
-
-                print(f"Sent message: {json_data}")
+                await self.websocket_client.send(json_data)
+                # await self.websocket_client.ping()
+                # print(f"sent message: {json_data}")
             except Exception as e:
-                print(f"Error sending message: {e}")
+                print(f"error sending message: {e}")
         else:
-            print("WebSocket is not connected.")
+            print("websocket is not connected")
 
 
-# Example usage
-async def main():
-    ws_client = WebSocketClient()
-    await ws_client.initialize()  # This will automatically connect to ws://localhost:8765
+class WebSocketThread:
+    def __init__(self):
+        self.client = WebSocketClient()
+        self.message_queue = Queue()
+        self.loop = None
+        self.thread = threading.Thread(target=self._start_async_loop, daemon=True)
 
-    # Keep sending messages
-    while True:
-        task = asyncio.create_task(ws_client.send_socket_message("Hello, WebSocket!"))
-        await asyncio.gather(task)
+    def start(self):
+        # start the websocket thread
+        self.thread.start()
 
-    # await ws_client.send_socket_message("Another message!")
+    def _start_async_loop(self):
+        # initialize and run the asyncio event loop
+        asyncio.set_event_loop(asyncio.new_event_loop())
+        self.loop = asyncio.get_event_loop()
+        self.loop.run_until_complete(self.client.initialize())
+        self.loop.create_task(self._process_messages())
+        self.loop.run_forever()
 
-    # If you're done, you can close it manually
-    await ws_client.close()
+    async def _process_messages(self):
+        # continuously check the queue and send messages
+        while True:
+            if not self.message_queue.empty():
+                message = self.message_queue.get()
+                await self.client.send_socket_message(message)
+            await asyncio.sleep(0.01)  # small delay to prevent busy waiting
+
+    def send_message(self, message):
+        # put a message into the queue to be sent by the websocket client
+        self.message_queue.put(message)
+
+    def stop(self):
+        # stop the thread and clean up the event loop
+        if self.loop and self.loop.is_running():
+            async def shutdown():
+                # cancel all pending tasks
+                tasks = [task for task in asyncio.all_tasks(self.loop) if task is not asyncio.current_task()]
+                for task in tasks:
+                    task.cancel()
+                # give tasks time to cancel cleanly
+                await asyncio.gather(*tasks, return_exceptions=True)
+                self.loop.stop()
+
+            # schedule the shutdown coroutine
+            asyncio.run_coroutine_threadsafe(shutdown(), self.loop)
+        self.thread.join()
+        print("websocket thread stopped cleanly")
 
 
+# example to like confirm it works
 if __name__ == "__main__":
-    asyncio.run(main())
+    ws_thread = WebSocketThread()
+    ws_thread.start()
+
+    # simulate another thread sending messages
+    def send_messages():
+        for i in range(10):
+            print(f"sending message {i}")
+            ws_thread.send_message(f"hello websocket {i}")
+            time.sleep(0)  # simulate delay between messages
+
+
+    sender_thread = threading.Thread(target=send_messages)
+    sender_thread.start()
+    sender_thread.join()
+
+    # stop the websocket thread when done
+    ws_thread.stop()

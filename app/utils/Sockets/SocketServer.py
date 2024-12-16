@@ -4,44 +4,40 @@ import websockets
 connected_clients = set()
 
 
-# async def echo(websocket):
-#     # Register the client connection
-#     connected_clients.add(websocket)
-#     try:
-#         print(f"New client connected: {websocket.remote_address}")
-#
-#         async for message in websocket:
-#             print(message)
-#             websocket.pong()
-#             # await websocket.send(message)
-#         #
-#         # async for message in websocket:
-#         #     print("gotmsg")
-#         #     # Process and broadcast message
-#         #     for client in connected_clients:
-#         #         if client != websocket:
-#         #             await client.send(message)
-#         #             print("sentmsg")
-#     except websockets.exceptions.ConnectionClosed as e:
-#         print(f"Client {websocket.remote_address} disconnected with error: {e}")
-#     finally:
-#         print("Removing socket client")
-#         connected_clients.remove(websocket)
-#         # Optionally: Close the websocket explicitly here if not already closed
-#         await websocket.close()
-
-
 async def echo(client):
     connected_clients.add(client)
-    async for message in client:
-        print(message)
-        client.pong()
-        # await websocket.send(message)
+    try:
+        while True:
+            try:
+                # set a timeout for receiving messages
+                message = await asyncio.wait_for(client.recv(), timeout=10)  # 10 seconds
+            except asyncio.TimeoutError:
+                print("No message received. Checking connection...")
+                continue  # keep the loop alive after timeout
+
+            # check if the message is a special ping frame
+            if message == "ping":
+                await client.pong()
+                print("Sent pong")
+            else:
+                # print(f"Received message: {message}")
+                for ListClient in connected_clients:
+                    if ListClient != client:
+                        await ListClient.send(message)
+                        print("Forwarded message")
+                await client.send(f"Echo: {message}")
+
+    except websockets.ConnectionClosed:
+        print("Connection closed")
+    finally:
+        connected_clients.remove(client)
+
 
 async def main():
     print("Socket Server Starting")
     async with websockets.serve(echo, "localhost", 8765):
-        await asyncio.Future()  # Run server indefinitely
+        await asyncio.Future()  # run server indefinitely
+
 
 def start_socket_server():
     asyncio.run(main())

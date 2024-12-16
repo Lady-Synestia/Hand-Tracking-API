@@ -292,7 +292,7 @@ class HandTrackingMain:
 
         return hand
 
-    async def mainloop(self, websocket_client, tracking_interval=1):
+    async def mainloop(self, websocket_client, tracking_interval=0.1):
         last_processed_time = time.time()  # Track the last processed frame time
 
         with self.hands:
@@ -310,7 +310,7 @@ class HandTrackingMain:
                     image_flipped = cv2.cvtColor(image_flipped, cv2.COLOR_RGB2BGR)
                     if results.multi_hand_landmarks and results.multi_handedness:
                         json_dict = self.convert_to_serializable(results.multi_hand_landmarks)
-                        await websocket_client.send_socket_message(json_dict)
+                        websocket_client.send_message(json_dict)
                         for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
                             self.mp_drawing.draw_landmarks(
                                 image_flipped,
@@ -345,6 +345,11 @@ class HandTrackingMain:
         cv2.destroyWindow("preview")
         self.vc.release()
 
+
 async def main(websocket_client):
+    # this like initialises the camera and stuff. U can change the camera index it uses in here
     handTrackManager = HandTrackingMain()
-    await handTrackManager.mainloop(websocket_client)
+
+    # this does the actual tracking and the tracking interval is the delay between tracking frames. I think 0 might break everything it might not
+    tracking_interval = 0.1
+    await handTrackManager.mainloop(websocket_client, tracking_interval)
