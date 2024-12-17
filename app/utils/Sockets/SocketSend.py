@@ -7,9 +7,9 @@ from queue import Queue
 import websockets
 import websockets.protocol
 
-
 class WebSocketClient:
     _instance = None
+    _connection_time = 0
 
     def __new__(cls):
         if cls._instance is None:
@@ -25,6 +25,14 @@ class WebSocketClient:
         self.max_messages_per_window = 70
         self.window_size = 1
         self.message_interval = 1 / self.max_messages_per_window
+
+    def _start_connection_timer(self):
+        self._connection_time = time.time()
+        print(f"Connected at {self._connection_time}")
+
+    def _reset_connection_timer(self):
+        end_time = time.time()
+        print(f"Disconnected at {end_time}, connection lasted for {end_time-self._connection_time}")
 
     async def initialize(self):
         if self.websocket_client is None or self.websocket_client.closed:
@@ -50,6 +58,7 @@ class WebSocketClient:
                 close_timeout=None
             )
             print(f"connected to {uri}")
+            self._start_connection_timer()
         except Exception as e:
             print(f"connection error: {e} retrying...")
             await asyncio.sleep(2)
@@ -59,6 +68,7 @@ class WebSocketClient:
         if self.websocket_client is not None:
             try:
                 if self.websocket_client.state != websockets.protocol.State.OPEN:
+                    self._reset_connection_timer()
                     print("websocket closed reconnecting...")
                     await self.connect(self.uri)
 

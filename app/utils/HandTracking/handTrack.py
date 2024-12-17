@@ -147,7 +147,7 @@ class HandTrackingMain:
         # Create a window for the camera feed called "preview"
         cv2.namedWindow("preview")
         # Start capturing from the default camera
-        self.vc = cv2.VideoCapture(3)
+        self.vc = cv2.VideoCapture(0)
 
         self.font = cv2.FONT_HERSHEY_SIMPLEX
         if self.vc.isOpened():  # try to get the first frame
