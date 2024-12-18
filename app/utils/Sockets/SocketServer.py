@@ -82,22 +82,26 @@ async def echo(client):
                             right_orientation = right_hand["Orientation"]
 
                             # Prepare the sections
-                            left_hand = {
-                                "Landmarks": left_landmarks if preferences_str[0] == '1' else "None",
-                                "Gesture": left_gesture if preferences_str[2] == '1' else "None",
-                                "Orientation": left_orientation if preferences_str[1] == '1' else "None"
-                            }
+                            left_hand = {}
+                            if preferences_str[0] == '1':
+                                left_hand["Landmarks"] = left_landmarks if left_landmarks != "None" else None
+                            if preferences_str[1] == '1':
+                                left_hand["Orientation"] = left_orientation if left_orientation != "None" else None
+                            if preferences_str[2] == '1':
+                                left_hand["Gesture"] = left_gesture if left_gesture != "None" else None
 
-                            right_hand = {
-                                "Landmarks": right_landmarks if preferences_str[0] == '1' else "None",
-                                "Gesture": right_gesture if preferences_str[2] == '1' else "None",
-                                "Orientation": right_orientation if preferences_str[1] == '1' else "None"
-                            }
+                            right_hand = {}
+                            if preferences_str[0] == '1':
+                                right_hand["Landmarks"] = right_landmarks if right_landmarks != "None" else None
+                            if preferences_str[1] == '1':
+                                right_hand["Orientation"] = right_orientation if right_orientation != "None" else None
+                            if preferences_str[2] == '1':
+                                right_hand["Gesture"] = right_gesture if right_gesture != "None" else None
 
-                            # Construct the final output JSON
+                            # Construct the final output JSON, removing keys with None values
                             output = {
-                                "Left": left_hand,
-                                "Right": right_hand
+                                "Left": {key: value for key, value in left_hand.items() if value is not None},
+                                "Right": {key: value for key, value in right_hand.items() if value is not None}
                             }
 
                             # Printing the requested sections as formatted JSON
