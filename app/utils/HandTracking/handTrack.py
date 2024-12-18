@@ -147,7 +147,7 @@ class HandTrackingMain:
         # Create a window for the camera feed called "preview"
         cv2.namedWindow("preview")
         # Start capturing from the default camera
-        self.vc = cv2.VideoCapture(0)
+        self.vc = cv2.VideoCapture(3)
 
         self.font = cv2.FONT_HERSHEY_SIMPLEX
         if self.vc.isOpened():  # try to get the first frame
@@ -157,10 +157,10 @@ class HandTrackingMain:
             self.rval = False
 
         self.gesture = Gesture("None", "None", [Finger(None, None, None, None, True, "thumb", False),
-                                                      Finger(None, None, None, None, False, "index", False),
-                                                      Finger(None, None, None, None, False, "middle", False),
-                                                      Finger(None, None, None, None, False, "ring", False),
-                                                      Finger(None, None, None, None, False, "pinky", False)], None,
+                                                Finger(None, None, None, None, False, "index", False),
+                                                Finger(None, None, None, None, False, "middle", False),
+                                                Finger(None, None, None, None, False, "ring", False),
+                                                Finger(None, None, None, None, False, "pinky", False)], None,
                                None)
         self.left_gesture = self.gesture
         self.left_gesture.handedness = "Left"

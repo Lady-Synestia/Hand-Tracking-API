@@ -64,22 +64,45 @@ async def echo(client):
                             preferences_str = preferences  # take the single preference string
 
                             # Convert JSON string to Python object
+                            # Convert the string to a Python dictionary
                             data = json.loads(message)
-                            requested_sections = []
 
-                            # checking each position in the preferences
-                            if preferences_str[0] == '1':
-                                # print("Sending Orientations")
-                                requested_sections.append(data[0])
-                            if preferences_str[1] == '1':
-                                # print("Sending tracking points")
-                                requested_sections.append(data[1])
-                            if preferences_str[2] == '1':
-                                # print("Sending Gestures")
-                                requested_sections.append(data[2])
+                            # Accessing the Left and Right hand data
+                            left_hand = data["Left"]
+                            right_hand = data["Right"]
 
-                            # print(json.dumps(requested_sections))
-                            await ListClient.send(json.dumps(requested_sections))
+                            # For Left hand
+                            left_landmarks = left_hand["Landmarks"]
+                            left_gesture = left_hand["Gesture"]
+                            left_orientation = left_hand["Orientation"]
+
+                            # For Right hand
+                            right_landmarks = right_hand["Landmarks"]
+                            right_gesture = right_hand["Gesture"]
+                            right_orientation = right_hand["Orientation"]
+
+                            # Prepare the sections
+                            left_hand = {
+                                "Landmarks": left_landmarks if preferences_str[0] == '1' else "None",
+                                "Gesture": left_gesture if preferences_str[2] == '1' else "None",
+                                "Orientation": left_orientation if preferences_str[1] == '1' else "None"
+                            }
+
+                            right_hand = {
+                                "Landmarks": right_landmarks if preferences_str[0] == '1' else "None",
+                                "Gesture": right_gesture if preferences_str[2] == '1' else "None",
+                                "Orientation": right_orientation if preferences_str[1] == '1' else "None"
+                            }
+
+                            # Construct the final output JSON
+                            output = {
+                                "Left": left_hand,
+                                "Right": right_hand
+                            }
+
+                            # Printing the requested sections as formatted JSON
+                            # print(json.dumps(output, indent=4))
+                            await ListClient.send(json.dumps(output))
                 # await client.send(f"Echo: {message}")
 
     except websockets.ConnectionClosed:
