@@ -289,6 +289,11 @@ class HandTrackingMain:
                     image_flipped = cv2.cvtColor(image_flipped, cv2.COLOR_BGR2RGB)
                     results = self.hands.process(image_flipped)
 
+                    self.left_orientation = None
+                    self.right_orientation = None
+                    self.left_landmarks = None
+                    self.right_landmarks = None
+
                     image_flipped.flags.writeable = True
                     image_flipped = cv2.cvtColor(image_flipped, cv2.COLOR_RGB2BGR)
                     if results.multi_hand_landmarks and results.multi_handedness:
