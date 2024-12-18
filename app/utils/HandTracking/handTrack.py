@@ -147,7 +147,7 @@ class HandTrackingMain:
         # Create a window for the camera feed called "preview"
         cv2.namedWindow("preview")
         # Start capturing from the default camera
-        self.vc = cv2.VideoCapture(3)
+        self.vc = cv2.VideoCapture(0)
 
         self.font = cv2.FONT_HERSHEY_SIMPLEX
         if self.vc.isOpened():  # try to get the first frame
@@ -267,7 +267,7 @@ class HandTrackingMain:
     def get_formatted_hand_data(self, landmark_list):
         # Create a dictionary with id as the key and convert each NormalizedLandmark to a dictionary
         tracked_data = {
-            i + 1: {
+            i: {
                 'X': data_point.x,
                 'Y': data_point.y,
                 'Z': data_point.z
