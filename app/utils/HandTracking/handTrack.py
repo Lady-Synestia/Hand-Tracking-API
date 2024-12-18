@@ -164,6 +164,8 @@ class HandTrackingMain:
                                None)
         self.left_gesture = self.gesture
         self.left_gesture.handedness = "Left"
+        self.left_orientation = None
+        self.right_orientation = None
         self.right_gesture = self.gesture
         self.right_gesture.handedness = "Right"
         self.rising_edge = False
@@ -265,15 +267,20 @@ class HandTrackingMain:
             all_landmarks.append([hand_data])
 
         # Return the serialized JSON string of all landmarks
-        return json.dumps(all_landmarks)
+        return all_landmarks
 
     def detect_gestures(self, landmarks):
-        """
-        Detect what hand gestures are being shown
+        hand = self.assemble_hand(landmarks)
+        hand.orientation = hand.get_orientation()
+        # print(hand.orientation)
 
-        :param landmarks: results from hand_landmarks.landmark
-        :return: Gesture
-        """
+        for gesture in self.gestures:
+            if hand.compare(gesture):
+                hand.name = gesture.name
+
+        return hand
+
+    def assemble_hand(self, landmarks):
         wrist = landmarks[0]
         f_thumb = Finger(landmarks[1], landmarks[2], landmarks[3], landmarks[4], wrist, True)
         f_index = Finger(landmarks[5], landmarks[6], landmarks[7], landmarks[8], wrist)
@@ -283,12 +290,6 @@ class HandTrackingMain:
 
         hand = Gesture("unknown", "unknown", [f_thumb, f_index, f_middle, f_ring, f_pinky],
                        wrist)  # The current gesture that we want to check against the list of gestures
-        hand.orientation = hand.get_orientation()
-        # print(hand.orientation)
-
-        for gesture in self.gestures:
-            if hand.compare(gesture):
-                hand.name = gesture.name
 
         return hand
 
@@ -309,8 +310,6 @@ class HandTrackingMain:
                     image_flipped.flags.writeable = True
                     image_flipped = cv2.cvtColor(image_flipped, cv2.COLOR_RGB2BGR)
                     if results.multi_hand_landmarks and results.multi_handedness:
-                        json_dict = self.convert_to_serializable(results.multi_hand_landmarks)
-                        websocket_client.send_message(json_dict)
                         for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
                             self.mp_drawing.draw_landmarks(
                                 image_flipped,
@@ -324,16 +323,40 @@ class HandTrackingMain:
                             match handedness.classification[0].label:
                                 case "Left":
                                     self.left_gesture = self.gesture
+                                    self.left_orientation = self.gesture.orientation if self.gesture.orientation is not None else "unknown"
                                     image_flipped = cv2.putText(image_flipped, self.left_gesture.name, (50, 50),
                                                                 self.font,
                                                                 1, (255, 0, 255),
                                                                 2, cv2.LINE_AA)
                                 case "Right":
                                     self.right_gesture = self.gesture
+                                    self.right_orientation = self.gesture.orientation if self.gesture.orientation is not None else "unknown"
+
                                     image_flipped = cv2.putText(image_flipped, self.right_gesture.name, (400, 50),
                                                                 self.font, 1,
                                                                 (255, 0, 255),
                                                                 2, cv2.LINE_AA)
+
+                        # at this point we have all the correct data to send across the api
+                        # it will be added into an array and sent so that it can be handled
+
+                        #
+                        # print(self.left_gesture.name)
+                        # print(self.right_gesture.name)
+                        # print(self.left_orientation)
+                        # print(self.right_orientation)
+
+                        self.left_orientation = "unknown" if self.left_orientation is None else self.left_orientation
+                        self.right_orientation = "unknown" if self.right_orientation is None else self.right_orientation
+
+                        dictNotJson = self.convert_to_serializable(results.multi_hand_landmarks)
+
+                        data = [
+                            [self.left_orientation, self.right_orientation],  # Value 1: Left and Right orientation
+                            dictNotJson,  # Value 2: Tracking Points
+                            [self.left_gesture.name, self.right_gesture.name]  # Value 3: Gestures
+                        ]
+                        websocket_client.send_message(json.dumps(data))
 
                     cv2.imshow("preview", image_flipped)
 
