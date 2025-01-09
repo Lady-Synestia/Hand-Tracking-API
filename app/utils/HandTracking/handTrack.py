@@ -117,7 +117,7 @@ class Gesture:
         :return: orientation: str, can be "up", "down", "left", or "right"
         """
         # We are only concerned about the position of the middle finger relative to the wrist
-        if self.orientation == "unknown":
+        if self.orientation == "None":
             a = self.fingers[2].a  # Middle finger position
 
             if abs(a.x - self.wrist.x) < abs(a.y - self.wrist.y):  # then we know the hand is pointing either up or down
@@ -156,11 +156,11 @@ class HandTrackingMain:
         else:
             self.rval = False
 
-        self.gesture = Gesture("unknown", "unknown", [Finger(None, None, None, None, True, "thumb", False),
-                                                      Finger(None, None, None, None, False, "index", False),
-                                                      Finger(None, None, None, None, False, "middle", False),
-                                                      Finger(None, None, None, None, False, "ring", False),
-                                                      Finger(None, None, None, None, False, "pinky", False)], None,
+        self.gesture = Gesture("None", "None", [Finger(None, None, None, None, True, "thumb", False),
+                                                Finger(None, None, None, None, False, "index", False),
+                                                Finger(None, None, None, None, False, "middle", False),
+                                                Finger(None, None, None, None, False, "ring", False),
+                                                Finger(None, None, None, None, False, "pinky", False)], None,
                                None)
         self.left_gesture = self.gesture
         self.left_gesture.handedness = "Left"
@@ -169,105 +169,76 @@ class HandTrackingMain:
         self.right_gesture = self.gesture
         self.right_gesture.handedness = "Right"
         self.rising_edge = False
+        self.left_landmarks = None
+        self.right_landmarks = None
 
-        self.gestures = [Gesture("thumbs up", "left", [
+        self.gestures = [Gesture("ThumbsUp", "left", [
             Finger(None, None, None, None, True, "thumb", True),
             Finger(None, None, None, None, False, "index", False),
             Finger(None, None, None, None, False, "middle", False),
             Finger(None, None, None, None, False, "ring", False),
             Finger(None, None, None, None, False, "pinky", False)]),
-                         Gesture("thumbs up", "right", [
+                         Gesture("ThumbsUp", "right", [
                              Finger(None, None, None, None, True, "thumb", True),
                              Finger(None, None, None, None, False, "index", False),
                              Finger(None, None, None, None, False, "middle", False),
                              Finger(None, None, None, None, False, "ring", False),
                              Finger(None, None, None, None, False, "pinky", False)]),
-                         Gesture("fuck you", "up", [
+                         Gesture("MiddleFinger", "up", [
                              Finger(None, None, None, None, True, "thumb", False),
                              Finger(None, None, None, None, False, "index", False),
                              Finger(None, None, None, None, False, "middle", True),
                              Finger(None, None, None, None, False, "ring", False),
                              Finger(None, None, None, None, False, "pinky", False)]),
-                         Gesture("fist", "any", [
+                         Gesture("Fist", "any", [
                              Finger(None, None, None, None, True, "thumb", False),
                              Finger(None, None, None, None, False, "index", False),
                              Finger(None, None, None, None, False, "middle", False),
                              Finger(None, None, None, None, False, "ring", False),
                              Finger(None, None, None, None, False, "pinky", False)]),
-                         Gesture("open hand", "any", [
+                         Gesture("OpenPalm", "any", [
                              Finger(None, None, None, None, True, "thumb", True),
                              Finger(None, None, None, None, False, "index", True),
                              Finger(None, None, None, None, False, "middle", True),
                              Finger(None, None, None, None, False, "ring", True),
                              Finger(None, None, None, None, False, "pinky", True)]),
-                         Gesture("metal", "up", [
+                         Gesture("Metal", "up", [
                              Finger(None, None, None, None, True, "thumb", False),
                              Finger(None, None, None, None, False, "index", True),
                              Finger(None, None, None, None, False, "middle", False),
                              Finger(None, None, None, None, False, "ring", False),
                              Finger(None, None, None, None, False, "pinky", True)]),
-                         Gesture("web shooter", "down", [
+                         Gesture("WebShooter", "down", [
                              Finger(None, None, None, None, True, "thumb", False),
                              Finger(None, None, None, None, False, "index", True),
                              Finger(None, None, None, None, False, "middle", False),
                              Finger(None, None, None, None, False, "ring", False),
                              Finger(None, None, None, None, False, "pinky", True)]),
-                         Gesture("erm ackshually", "up", [
+                         Gesture("Number1", "up", [
                              Finger(None, None, None, None, True, "thumb", False),
                              Finger(None, None, None, None, False, "index", True),
                              Finger(None, None, None, None, False, "middle", False),
                              Finger(None, None, None, None, False, "ring", False),
                              Finger(None, None, None, None, False, "pinky", False)]),
-                         Gesture("victory", "up", [
+                         Gesture("Number2", "up", [
                              Finger(None, None, None, None, True, "thumb", False),
                              Finger(None, None, None, None, False, "index", True),
                              Finger(None, None, None, None, False, "middle", True),
                              Finger(None, None, None, None, False, "ring", False),
                              Finger(None, None, None, None, False, "pinky", False)]),
-                         Gesture("number 3", "up", [
+                         Gesture("Number3", "up", [
                              Finger(None, None, None, None, True, "thumb", False),
                              Finger(None, None, None, None, False, "index", True),
                              Finger(None, None, None, None, False, "middle", True),
                              Finger(None, None, None, None, False, "ring", True),
                              Finger(None, None, None, None, False, "pinky", False)]),
-                         Gesture("ok", "up", [
+                         Gesture("Ok", "up", [
                              Finger(None, None, None, None, True, "thumb", True),
                              Finger(None, None, None, None, False, "index", False),
                              Finger(None, None, None, None, False, "middle", True),
                              Finger(None, None, None, None, False, "ring", True),
-                             Finger(None, None, None, None, False, "pinky", True)]),
-                         Gesture("lmao gottem", "down", [
-                             Finger(None, None, None, None, True, "thumb", False),
-                             Finger(None, None, None, None, False, "index", False),
-                             Finger(None, None, None, None, False, "middle", True),
-                             Finger(None, None, None, None, False, "ring", True),
-                             Finger(None, None, None, None, False, "pinky", True)]),
+                             Finger(None, None, None, None, False, "pinky", True)])
                          ]
-
-    # Assuming `results.multi_hand_landmarks` is the list you're passing
-    def convert_to_serializable(self,
-                                landmark_list):  # Update this to your heart's content I won't touch this unless you want me to - will
-        all_landmarks = []  # List to store all landmarks for all hands
-
-        for hand_landmarks in landmark_list:
-            # Process landmarks for each hand
-
-            # * using a dictionary so points can have keys
-            hand_data = {}
-
-            for index, landmark in enumerate(hand_landmarks.landmark):
-                # Add each landmark's x, y, z values as a dictionary
-                hand_data["point" + str(index)] = {
-                    'x': landmark.x,
-                    'y': landmark.y,
-                    'z': landmark.z
-                }
-
-            # Append the landmarks for this hand to the overall list
-            all_landmarks.append([hand_data])
-
-        # Return the serialized JSON string of all landmarks
-        return all_landmarks
 
     def detect_gestures(self, landmarks):
         hand = self.assemble_hand(landmarks)
@@ -288,10 +259,21 @@ class HandTrackingMain:
         f_ring = Finger(landmarks[13], landmarks[14], landmarks[15], landmarks[16], wrist)
         f_pinky = Finger(landmarks[17], landmarks[18], landmarks[19], landmarks[20], wrist)
 
-        hand = Gesture("unknown", "unknown", [f_thumb, f_index, f_middle, f_ring, f_pinky],
+        hand = Gesture("None", "None", [f_thumb, f_index, f_middle, f_ring, f_pinky],
                        wrist)  # The current gesture that we want to check against the list of gestures
 
         return hand
+
+    def get_formatted_hand_data(self, landmark_list):
+        # Create a dictionary with id as the key and convert each NormalizedLandmark to a dictionary
+        tracked_data = {
+            i: {
+                'X': data_point.x,
+                'Y': data_point.y,
+                'Z': data_point.z
+            } for i, data_point in enumerate(landmark_list)
+        }
+        return tracked_data
 
     async def mainloop(self, websocket_client, tracking_interval=0.1):
         last_processed_time = time.time()  # Track the last processed frame time
@@ -306,6 +288,11 @@ class HandTrackingMain:
                     image_flipped.flags.writeable = False
                     image_flipped = cv2.cvtColor(image_flipped, cv2.COLOR_BGR2RGB)
                     results = self.hands.process(image_flipped)
+
+                    self.left_orientation = None
+                    self.right_orientation = None
+                    self.left_landmarks = None
+                    self.right_landmarks = None
 
                     image_flipped.flags.writeable = True
                     image_flipped = cv2.cvtColor(image_flipped, cv2.COLOR_RGB2BGR)
@@ -322,15 +309,17 @@ class HandTrackingMain:
                             self.gesture = self.detect_gestures(landmarks)
                             match handedness.classification[0].label:
                                 case "Left":
+                                    self.left_landmarks = landmarks  # Set left hand landmarks
                                     self.left_gesture = self.gesture
-                                    self.left_orientation = self.gesture.orientation if self.gesture.orientation is not None else "unknown"
+                                    self.left_orientation = self.gesture.orientation if self.gesture.orientation is not None else "None"
                                     image_flipped = cv2.putText(image_flipped, self.left_gesture.name, (50, 50),
                                                                 self.font,
                                                                 1, (255, 0, 255),
                                                                 2, cv2.LINE_AA)
                                 case "Right":
+                                    self.right_landmarks = landmarks  # Set left hand landmarks
                                     self.right_gesture = self.gesture
-                                    self.right_orientation = self.gesture.orientation if self.gesture.orientation is not None else "unknown"
+                                    self.right_orientation = self.gesture.orientation if self.gesture.orientation is not None else "None"
 
                                     image_flipped = cv2.putText(image_flipped, self.right_gesture.name, (400, 50),
                                                                 self.font, 1,
@@ -340,23 +329,37 @@ class HandTrackingMain:
                         # at this point we have all the correct data to send across the api
                         # it will be added into an array and sent so that it can be handled
 
-                        #
-                        # print(self.left_gesture.name)
-                        # print(self.right_gesture.name)
-                        # print(self.left_orientation)
-                        # print(self.right_orientation)
+                        self.left_orientation = "None" if self.left_orientation is None else self.left_orientation
+                        self.right_orientation = "None" if self.right_orientation is None else self.right_orientation
 
-                        self.left_orientation = "unknown" if self.left_orientation is None else self.left_orientation
-                        self.right_orientation = "unknown" if self.right_orientation is None else self.right_orientation
+                        self.left_landmarks = "None" if self.left_landmarks is None else self.left_landmarks
+                        self.right_landmarks = "None" if self.right_landmarks is None else self.right_landmarks
 
-                        dictNotJson = self.convert_to_serializable(results.multi_hand_landmarks)
+                        if self.left_landmarks is not None and self.left_landmarks != "None":
+                            reformatted_left_landmarks = self.get_formatted_hand_data(self.left_landmarks)
+                        else:
+                            reformatted_left_landmarks = "None"
 
-                        data = [
-                            [self.left_orientation, self.right_orientation],  # Value 1: Left and Right orientation
-                            dictNotJson,  # Value 2: Tracking Points
-                            [self.left_gesture.name, self.right_gesture.name]  # Value 3: Gestures
-                        ]
-                        websocket_client.send_message(json.dumps(data))
+                        if self.right_landmarks is not None and self.right_landmarks != "None":
+                            reformatted_right_landmarks = self.get_formatted_hand_data(self.right_landmarks)
+                        else:
+                            reformatted_right_landmarks = "None"
+
+                        output = {
+                            "Left": {
+                                "Landmarks": reformatted_left_landmarks,
+                                "Gesture": self.left_gesture.name,
+                                "Orientation": self.left_orientation
+                            },
+                            "Right": {
+                                "Landmarks": reformatted_right_landmarks,
+                                "Gesture": self.right_gesture.name,
+                                "Orientation": self.right_orientation
+                            }
+                        }
+
+                        websocket_client.send_message(json.dumps(output))
+                        # print(output)
 
                     cv2.imshow("preview", image_flipped)
 
