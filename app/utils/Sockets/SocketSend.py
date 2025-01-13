@@ -7,6 +7,7 @@ from queue import Queue
 import websockets
 import websockets.protocol
 
+
 class WebSocketClient:
     _instance = None
     _connection_time = 0
@@ -32,7 +33,7 @@ class WebSocketClient:
 
     def _reset_connection_timer(self):
         end_time = time.time()
-        print(f"Disconnected at {end_time}, connection lasted for {end_time-self._connection_time}")
+        print(f"Disconnected at {end_time}, connection lasted for {end_time - self._connection_time}")
 
     async def initialize(self):
         if self.websocket_client is None or self.websocket_client.closed:
@@ -134,6 +135,7 @@ class WebSocketThread:
 if __name__ == "__main__":
     ws_thread = WebSocketThread()
     ws_thread.start()
+
 
     # simulate another thread sending messages
     def send_messages():
